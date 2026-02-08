@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from .db import Base
 
 app = FastAPI(title="Biblioteca Hermenéutica")
 
