@@ -1,56 +1,85 @@
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, Boolean
+from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, JSON
 from sqlalchemy.orm import relationship
 from datetime import datetime
+
 from .db import Base
 
 
 class Book(Base):
     __tablename__ = "books"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True)
     title = Column(String, nullable=False)
     author = Column(String, nullable=True)
     description = Column(Text, nullable=True)
 
-    fragments = relationship("Fragment", back_populates="book")
-    reading_states = relationship("ReadingState", back_populates="book")
+    language = Column(String, default="es", nullable=False)
+    publication_year = Column(Integer, nullable=True)
+
+    epistemological_notes = Column(Text, nullable=True)
+    reading_level = Column(String, nullable=True)
+    tags = Column(JSON, nullable=True)
+
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    chapters = relationship(
+        "Chapter",
+        back_populates="book",
+        cascade="all, delete-orphan",
+        order_by="Chapter.number"
+    )
+
+    reading_progress_entries = relationship(
+        "ReadingProgress",
+        back_populates="book",
+        cascade="all, delete-orphan"
+    )
 
 
-class Fragment(Base):
-    __tablename__ = "fragments"
+class Chapter(Base):
+    __tablename__ = "chapters"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True)
     book_id = Column(Integer, ForeignKey("books.id"), nullable=False)
 
-    order = Column(Integer, nullable=False)
-    title = Column(String, nullable=True)
-    content = Column(Text, nullable=True)
+    number = Column(Integer, nullable=False)
+    title = Column(String, nullable=False)
+    content = Column(Text, nullable=False)
 
-    book = relationship("Book", back_populates="fragments")
-    notes = relationship("Note", back_populates="fragment")
+    hermeneutic_notes = Column(Text, nullable=True)
+
+    book = relationship("Book", back_populates="chapters")
+
+    notes = relationship(
+        "Note",
+        back_populates="chapter",
+        cascade="all, delete-orphan"
+    )
 
 
-class ReadingState(Base):
-    __tablename__ = "reading_states"
+class ReadingProgress(Base):
+    __tablename__ = "reading_progress"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True)
     book_id = Column(Integer, ForeignKey("books.id"), nullable=False)
-    fragment_id = Column(Integer, ForeignKey("fragments.id"), nullable=True)
+    chapter_id = Column(Integer, ForeignKey("chapters.id"), nullable=True)
 
-    progress = Column(Integer, nullable=True)
-    active = Column(Boolean, default=True)
-    last_read_at = Column(DateTime, default=datetime.utcnow)
+    progress_percentage = Column(Integer, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
-    book = relationship("Book", back_populates="reading_states")
+    book = relationship("Book", back_populates="reading_progress_entries")
+    chapter = relationship("Chapter")
 
 
 class Note(Base):
     __tablename__ = "notes"
 
-    id = Column(Integer, primary_key=True, index=True)
-    fragment_id = Column(Integer, ForeignKey("fragments.id"), nullable=False)
+    id = Column(Integer, primary_key=True)
+    chapter_id = Column(Integer, ForeignKey("chapters.id"), nullable=False)
 
     content = Column(Text, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    note_type = Column(String, nullable=True)
 
-    fragment = relationship("Fragment", back_populates="notes")
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    chapter = relationship("Chapter", back_populates="notes")
