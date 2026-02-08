@@ -1,10 +1,10 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
-# Base declarativa (ya validada en 4.1)
+# Base declarativa
 Base = declarative_base()
 
-# URL de la base de datos
+# Base de datos (SQLite por ahora)
 DATABASE_URL = "sqlite:///./biblioteca.db"
 
 # Engine
@@ -13,10 +13,11 @@ engine = create_engine(
     connect_args={"check_same_thread": False}
 )
 
-# Session local
+# Sesión local
 SessionLocal = sessionmaker(
     autocommit=False,
     autoflush=False,
     bind=engine
 )
+
 
