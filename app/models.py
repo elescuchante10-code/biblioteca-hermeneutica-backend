@@ -9,4 +9,3 @@ class Book(Base):
     title = Column(String, nullable=False)
     author = Column(String, nullable=True)
     description = Column(Text, nullable=True)
-
