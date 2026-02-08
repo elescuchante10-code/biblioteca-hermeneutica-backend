@@ -1,54 +1,31 @@
-from fastapi import FastAPI, Depends
-from sqlalchemy.orm import Session
-from pydantic import BaseModel
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
-from .db import Base, engine, SessionLocal
-from .models import Book
+from .db import Base, engine
+from .routers import books, chapters, notes, reading
 
-app = FastAPI(title="Biblioteca Hermenéutica")
+Base.metadata.create_all(bind=engine)
 
+app = FastAPI(
+    title="Biblioteca Hermenéutica",
+    description="Backend para gestión de libros, capítulos, notas y progreso de lectura",
+    version="1.0.0"
+)
 
-# --- creación explícita de tablas ---
-@app.on_event("startup")
-def on_startup():
-    Base.metadata.create_all(bind=engine)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-
-# --- dependencia de base de datos ---
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-
-# --- esquema de entrada ---
-class BookCreate(BaseModel):
-    title: str
-    author: str | None = None
-    description: str | None = None
+app.include_router(books.router, prefix="/books", tags=["Books"])
+app.include_router(chapters.router, prefix="/chapters", tags=["Chapters"])
+app.include_router(notes.router, prefix="/notes", tags=["Notes"])
+app.include_router(reading.router, prefix="/reading", tags=["Reading Progress"])
 
 
-# --- endpoint de salud ---
-@app.get("/health")
-def health():
-    return {"status": "ok"}
-
-
-# --- acto de inscripción del libro ---
-@app.post("/books")
-def add_book(book: BookCreate, db: Session = Depends(get_db)):
-    new_book = Book(
-        title=book.title,
-        author=book.author,
-        description=book.description
-    )
-    db.add(new_book)
-    db.commit()
-    db.refresh(new_book)
-
-    return {
-        "message": "Libro inscrito en la biblioteca",
-        "book_id": new_book.id
-    }
+@app.get("/")
+def root():
+    return {"status": "ok", "service": "Biblioteca Hermenéutica Backend"}
