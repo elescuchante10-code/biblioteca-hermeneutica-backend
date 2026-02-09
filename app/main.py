@@ -2,7 +2,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .db import Base, engine
-from app.app.routers import books, chapters, notes, reading
+from .routers import books, chapters, notes, reading
+
 
 
 
